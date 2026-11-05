@@ -1,123 +1,257 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Placement Predictor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="page-shell">
-        <div class="hero">
-            <div class="badge">Machine Learning + Flask</div>
-            <h1>🎓 Student Placement Predictor</h1>
-            <p>
-                Enter student details and let the Logistic Regression model
-                predict the placement outcome.
-            </p>
+<div class="layout">
 
-            <div class="accuracy-box">
-                Model test accuracy: <strong>{{ model_accuracy }}%</strong>
+    <!-- ===== Left rail: context + live progress ===== -->
+    <aside class="rail">
+        <div>
+            <h1>🎓 Student Placement Predictor</h1>
+            <p class="lede">
+                Enter a student's details and the Logistic Regression model
+                will estimate the chance of placement.
+            </p>
+        </div>
+
+        <div class="gauges">
+            <div class="gauge">
+                <div class="ring intro" style="--p: {{ model_accuracy }}">
+                    <span>{{ model_accuracy }}%</span>
+                </div>
+                Model test accuracy
+            </div>
+            <div class="gauge">
+                <div class="ring mint" id="completion-ring" style="--p: 0">
+                    <span id="completion-text">0%</span>
+                </div>
+                Form complete
             </div>
         </div>
 
-        <div class="card">
-            <form action="/predict" method="POST" class="form-grid">
-
-                <div class="field">
-                    <label>Gender</label>
-                    <select name="gender" required>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                    </select>
-                </div>
-
-                <div class="field">
-                    <label>Branch</label>
-                    <select name="branch" required>
-                        <option value="cse">CSE</option>
-                        <option value="it">IT</option>
-                        <option value="ece">ECE</option>
-                        <option value="eee">EEE</option>
-                        <option value="mech">Mechanical</option>
-                        <option value="civil">Civil</option>
-                    </select>
-                </div>
-
-                <div class="field">
-                    <label>City</label>
-                    <input type="text" name="city" placeholder="Delhi" required>
-                </div>
-
-                <div class="field">
-                    <label>CGPA</label>
-                    <input type="number" name="cgpa" step="0.01" min="0" max="10" placeholder="8.2" required>
-                </div>
-
-                <div class="field">
-                    <label>Attendance %</label>
-                    <input type="number" name="attendance_percent" step="0.1" min="0" max="100" placeholder="85" required>
-                </div>
-
-                <div class="field">
-                    <label>Technical Skills Rating (1-10)</label>
-                    <input type="number" name="technical_skills" min="1" max="10" placeholder="7" required>
-                </div>
-
-                <div class="field">
-                    <label>Projects Completed</label>
-                    <input type="number" name="projects_completed" min="0" max="20" placeholder="3" required>
-                </div>
-
-                <div class="field">
-                    <label>Coding Problems Solved</label>
-                    <input type="number" name="coding_problems_solved" min="0" placeholder="250" required>
-                </div>
-
-                <div class="field">
-                    <label>Communication Skill (1-10)</label>
-                    <input type="number" name="communication_skill" step="0.1" min="1" max="10" placeholder="7.5" required>
-                </div>
-
-                <div class="field">
-                    <label>Internship</label>
-                    <select name="internship" required>
-                        <option value="Yes">Yes</option>
-                        <option value="No">No</option>
-                    </select>
-                </div>
-
-                <div class="field">
-                    <label>Has Backlog?</label>
-                    <select name="has_backlog" required>
-                        <option value="No">No</option>
-                        <option value="Yes">Yes</option>
-                    </select>
-                </div>
-
-                <div class="field">
-                    <label>Tech Events Attended</label>
-                    <input type="number" name="tech_events_attended" min="0" placeholder="4" required>
-                </div>
-
-                <div class="field full-width">
-                    <label>Salary Expectation (₹ per year)</label>
-                    <input type="number" name="salary_expectation" min="0" placeholder="500000" required>
-                </div>
-
-                <div class="full-width">
-                    <button type="submit">
-                        Predict Placement 🚀
-                    </button>
-                </div>
-            </form>
-        </div>
+        <ul class="checklist" aria-label="Form sections">
+            <li data-check="background"><span class="tick"></span><a href="#background">Background</a></li>
+            <li data-check="academics"><span class="tick"></span><a href="#academics">Academics</a></li>
+            <li data-check="skills"><span class="tick"></span><a href="#skills">Skills and practice</a></li>
+            <li data-check="experience"><span class="tick"></span><a href="#experience">Experience and goals</a></li>
+        </ul>
 
         <p class="footer-note">
-             Logistic Regression • Pandas • Scikit-learn • Flask
-             -- Vishant Singh
+            Logistic Regression • Pandas • Scikit-learn • Flask<br>
+            -- Vishant Singh
         </p>
-    </div>
+    </aside>
+
+    <!-- ===== Form ===== -->
+    <main class="stage">
+        <form action="/predict" method="POST" id="predict-form">
+
+            <section class="group" id="background" data-group="background">
+                <div class="group-head">
+                    <h2>Background</h2>
+                    <p>Who the student is and where they study.</p>
+                </div>
+                <div class="fields">
+                    <div class="field">
+                        <span class="label" id="gender-label">Gender</span>
+                        <div class="seg" role="radiogroup" aria-labelledby="gender-label">
+                            <label><input type="radio" name="gender" value="Male" required><span>Male</span></label>
+                            <label><input type="radio" name="gender" value="Female"><span>Female</span></label>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="branch">Branch</label>
+                        <select id="branch" name="branch" required>
+                            <option value="" disabled selected>Choose a branch</option>
+                            <option value="cse">CSE</option>
+                            <option value="it">IT</option>
+                            <option value="ece">ECE</option>
+                            <option value="eee">EEE</option>
+                            <option value="mech">Mechanical</option>
+                            <option value="civil">Civil</option>
+                        </select>
+                    </div>
+
+                    <div class="field wide">
+                        <label for="city">City</label>
+                        <input type="text" id="city" name="city" placeholder="Delhi" autocomplete="off" required>
+                    </div>
+                </div>
+            </section>
+
+            <section class="group" id="academics" data-group="academics">
+                <div class="group-head">
+                    <h2>Academics</h2>
+                    <p>Grades, attendance and any pending papers.</p>
+                </div>
+                <div class="fields">
+                    <div class="field">
+                        <label for="cgpa">CGPA <span class="hint">out of 10</span></label>
+                        <input type="number" id="cgpa" name="cgpa" step="0.01" min="0" max="10" placeholder="8.2" required>
+                        <div class="meter" data-for="cgpa" data-max="10"><i></i></div>
+                    </div>
+
+                    <div class="field">
+                        <label for="attendance_percent">Attendance</label>
+                        <div class="affix post">
+                            <input type="number" id="attendance_percent" name="attendance_percent" step="0.1" min="0" max="100" placeholder="85" required>
+                            <span>%</span>
+                        </div>
+                        <div class="meter" data-for="attendance_percent" data-max="100"><i></i></div>
+                    </div>
+
+                    <div class="field wide">
+                        <span class="label" id="backlog-label">Has a backlog?</span>
+                        <div class="seg" role="radiogroup" aria-labelledby="backlog-label">
+                            <label><input type="radio" name="has_backlog" value="No" required><span>No</span></label>
+                            <label><input type="radio" name="has_backlog" value="Yes"><span>Yes</span></label>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="group" id="skills" data-group="skills">
+                <div class="group-head">
+                    <h2>Skills and practice</h2>
+                    <p>How the student rates and what they have built.</p>
+                </div>
+                <div class="fields">
+                    <div class="field">
+                        <label for="technical_skills">Technical skills <span class="hint">1 to 10</span></label>
+                        <input type="number" id="technical_skills" name="technical_skills" min="1" max="10" placeholder="7" required>
+                        <div class="meter" data-for="technical_skills" data-max="10"><i></i></div>
+                    </div>
+
+                    <div class="field">
+                        <label for="communication_skill">Communication <span class="hint">1 to 10</span></label>
+                        <input type="number" id="communication_skill" name="communication_skill" step="0.1" min="1" max="10" placeholder="7.5" required>
+                        <div class="meter" data-for="communication_skill" data-max="10"><i></i></div>
+                    </div>
+
+                    <div class="field">
+                        <label for="projects_completed">Projects completed</label>
+                        <input type="number" id="projects_completed" name="projects_completed" min="0" max="20" placeholder="3" required>
+                        <div class="meter" data-for="projects_completed" data-max="20"><i></i></div>
+                    </div>
+
+                    <div class="field">
+                        <label for="coding_problems_solved">Coding problems solved</label>
+                        <input type="number" id="coding_problems_solved" name="coding_problems_solved" min="0" placeholder="250" required>
+                    </div>
+                </div>
+            </section>
+
+            <section class="group" id="experience" data-group="experience">
+                <div class="group-head">
+                    <h2>Experience and goals</h2>
+                    <p>Industry exposure and pay expectations.</p>
+                </div>
+                <div class="fields">
+                    <div class="field">
+                        <span class="label" id="internship-label">Internship done?</span>
+                        <div class="seg" role="radiogroup" aria-labelledby="internship-label">
+                            <label><input type="radio" name="internship" value="Yes" required><span>Yes</span></label>
+                            <label><input type="radio" name="internship" value="No"><span>No</span></label>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="tech_events_attended">Tech events attended</label>
+                        <input type="number" id="tech_events_attended" name="tech_events_attended" min="0" placeholder="4" required>
+                    </div>
+
+                    <div class="field wide">
+                        <label for="salary_expectation">Salary expectation <span class="hint">per year</span></label>
+                        <div class="affix pre">
+                            <span>₹</span>
+                            <input type="number" id="salary_expectation" name="salary_expectation" min="0" placeholder="500000" required>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="submit-row">
+                <button type="submit" class="submit" id="submit-btn">Predict placement 🚀</button>
+                <p>All fields are required. The result appears on the next page.</p>
+            </div>
+        </form>
+    </main>
+</div>
+
+<script>
+(function () {
+    var form = document.getElementById('predict-form');
+    var ring = document.getElementById('completion-ring');
+    var ringText = document.getElementById('completion-text');
+    var btn = document.getElementById('submit-btn');
+    var btnLabel = btn.innerHTML;
+
+    function unique(list) {
+        return list.filter(function (v, i) { return list.indexOf(v) === i; });
+    }
+
+    function namesIn(root) {
+        var els = root.querySelectorAll('[name]');
+        return unique(Array.prototype.map.call(els, function (e) { return e.name; }));
+    }
+
+    function isFilled(name) {
+        var els = form.querySelectorAll('[name="' + name + '"]');
+        if (els[0].type === 'radio') {
+            return Array.prototype.some.call(els, function (r) { return r.checked; });
+        }
+        return els[0].value.trim() !== '' && els[0].checkValidity();
+    }
+
+    function updateMeters() {
+        document.querySelectorAll('.meter').forEach(function (m) {
+            var input = document.getElementById(m.dataset.for);
+            var max = parseFloat(m.dataset.max);
+            var v = parseFloat(input.value);
+            var pct = isNaN(v) ? 0 : Math.max(0, Math.min(100, (v / max) * 100));
+            m.firstElementChild.style.width = pct + '%';
+        });
+    }
+
+    function update() {
+        var all = namesIn(form);
+        var done = all.filter(isFilled).length;
+        var pct = Math.round((done / all.length) * 100);
+        ring.style.setProperty('--p', pct);
+        ringText.textContent = pct + '%';
+
+        document.querySelectorAll('.group').forEach(function (g) {
+            var ok = namesIn(g).every(isFilled);
+            var item = document.querySelector('[data-check="' + g.dataset.group + '"]');
+            if (item) { item.classList.toggle('done', ok); }
+        });
+
+        updateMeters();
+    }
+
+    form.addEventListener('input', update);
+    form.addEventListener('change', update);
+    form.addEventListener('submit', function () {
+        btn.disabled = true;
+        btn.textContent = 'Running the model…';
+    });
+    window.addEventListener('pageshow', function () {
+        btn.disabled = false;
+        btn.innerHTML = btnLabel;
+        update();
+    });
+
+    update();
+})();
+</script>
 </body>
 </html>

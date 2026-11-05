@@ -1,5 +1,5 @@
 d1={
-    "name":"Vishant",
+    "name":"Vishant Singh",
     "work":"Developer"
 }
 n="name"

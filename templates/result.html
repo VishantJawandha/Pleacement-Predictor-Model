@@ -1,47 +1,129 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Prediction Result</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="page-shell result-shell">
-        <div class="card result-card {{ result_class }}">
+    <main class="verdict {{ result_class }}">
 
+        <!-- Left: the number -->
+        <section class="verdict-dial">
             {% if error %}
-                <div class="big-emoji">⚠️</div>
-                <h1>Something went wrong</h1>
-                <p class="result-message">{{ error }}</p>
+                <div class="dial-icon">⚠️</div>
             {% else %}
-                <div class="big-emoji">{{ emoji }}</div>
+                <div class="ring intro" style="--p: {{ placement_probability }}">
+                    <span><b data-count="{{ placement_probability }}">{{ placement_probability }}</b><i>%</i></span>
+                </div>
+                <p>Placement probability</p>
+            {% endif %}
+        </section>
+
+        <!-- Right: the meaning -->
+        <section class="verdict-body">
+            {% if error %}
+                <h1>Something went wrong</h1>
+                <p class="message">{{ error }}</p>
+            {% else %}
+                <div class="emoji">{{ emoji }}</div>
                 <h1>{{ result_title }}</h1>
-                <p class="result-message">{{ result_message }}</p>
+                <p class="message">{{ result_message }}</p>
 
-                <div class="probability-box">
-                    <span>Placement probability</span>
-                    <strong>{{ placement_probability }}%</strong>
-                </div>
-
-                <div class="progress-track">
-                    <div class="progress-fill" style="width: {{ placement_probability }}%;"></div>
-                </div>
-
-                {% if prediction == 1 %}
-                    <div class="celebration">
-                        🎉 🎊 🥳 🎓 💼 🚀 ✨ 🎉
+                <div class="scale" role="img" aria-label="Placement probability {{ placement_probability }} percent on a scale from 0 to 100">
+                    <div class="scale-track">
+                        <div class="scale-marker" style="--at: {{ placement_probability }}"></div>
                     </div>
-                {% endif %}
-
-                <div class="mini-info">
-                    Model test accuracy: {{ model_accuracy }}%
+                    <div class="scale-ends"><span>0%</span><span>50%</span><span>100%</span></div>
                 </div>
+
+                <p class="note">
+                    Model test accuracy: {{ model_accuracy }}%. Treat this as an estimate
+                    based on past data, not a guarantee.
+                </p>
             {% endif %}
 
-            <a href="/" class="back-button">← Predict Another Student</a>
-        </div>
-    </div>
+            <a href="/" class="back-button">← Predict another student</a>
+        </section>
+    </main>
+
+    {% if not error and prediction == 1 %}
+        <canvas id="confetti" aria-hidden="true"></canvas>
+    {% endif %}
+
+    <script>
+    (function () {
+        var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        /* Count the percentage up in step with the ring */
+        var counter = document.querySelector('[data-count]');
+        if (counter && !reduce) {
+            var raw = counter.dataset.count;
+            var target = parseFloat(raw);
+            var decimals = (raw.split('.')[1] || '').length;
+            var start = null, duration = 1400;
+            counter.textContent = (0).toFixed(decimals);
+            function tick(t) {
+                if (start === null) start = t;
+                var k = Math.min((t - start) / duration, 1);
+                var eased = 1 - Math.pow(1 - k, 3);
+                counter.textContent = (target * eased).toFixed(decimals);
+                if (k < 1) requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+        }
+
+        /* One burst of confetti for a positive prediction */
+        var canvas = document.getElementById('confetti');
+        if (!canvas || reduce) return;
+        var ctx = canvas.getContext('2d');
+        var colors = ['#f0b03a', '#5fd49a', '#9fe3c4', '#ffffff', '#d6573d'];
+        var pieces = [];
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        for (var i = 0; i < 140; i++) {
+            pieces.push({
+                x: Math.random() * canvas.width,
+                y: -20 - Math.random() * canvas.height * 0.6,
+                w: 6 + Math.random() * 6,
+                h: 10 + Math.random() * 8,
+                vy: 2.5 + Math.random() * 3.5,
+                vx: -1.5 + Math.random() * 3,
+                rot: Math.random() * Math.PI,
+                vr: -0.15 + Math.random() * 0.3,
+                color: colors[i % colors.length]
+            });
+        }
+
+        var begin = performance.now();
+        function frame(now) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            pieces.forEach(function (p) {
+                p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rot);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                ctx.restore();
+            });
+            if (now - begin < 4500) {
+                requestAnimationFrame(frame);
+            } else {
+                canvas.remove();
+            }
+        }
+        requestAnimationFrame(frame);
+    })();
+    </script>
 </body>
 </html>
