@@ -138,9 +138,9 @@ new_student_encoded = new_student_encoded.reindex(
 
 This makes the new student's columns exactly match the columns used while training the model.
 
-## Teaching Flow
 
-For students, explain the app in this order:
+
+The app is in this order:
 
 1. Load data
 2. Clean data
