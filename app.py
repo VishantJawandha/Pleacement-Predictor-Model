@@ -52,15 +52,15 @@ def predict():
         placement_probability = round(probability * 100, 1)
 
         if prediction == 1:
-            result_title = "Congratulations! 🎉🥳🚀"
+            result_title = "Congratulations! 🎉🥳"
             result_message = "The model predicts that this student may get placed."
             result_class = "success"
             emoji = "🎓✨💼"
         else:
-            result_title = "Keep Improving! 💪📚🚀"
+            result_title = "Keep Improving! 💪📚"
             result_message = "The model predicts that this student may not get placed yet."
             result_class = "warning"
-            emoji = "🌱🔥🎯"
+            emoji = "🎯"
 
         return render_template(
             "result.html",
